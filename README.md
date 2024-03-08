@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # JpaBasicReview
 
 JPA 구동 방식 
@@ -440,3 +441,6 @@ unique Constraint | 유니크 제약 조건 지정 가능
 기본 키 제약 조건 : null X, 유일, 변하면 안됨 
 미래까지 이 조건을 만족하는 비즈니스 키 찾기 어려움, 대리키 사용 (비즈니스적으로 사용 되는게 X)
 권장 : Long형 + 대체키 + 키 생성전략 사용 
+=======
+# JpaBasicReview
+>>>>>>> 610f46a6245398d965fd22dece3eea9e40081efc
