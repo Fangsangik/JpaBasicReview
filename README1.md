@@ -473,3 +473,418 @@ CascadeType.All + orphanRemovel=true
    나머지는 Repo를 만들지 X 
    parent = AggregateRoot 
    child = root 
+
+
+값 타입 
+기본값 타입 
+JPA 데이터 타입 분류 
+
+-엔티티 타입 
+@Entity로 정의하는 객체 
+데이터가 변해도 식별자로 지속해서 추적 가능 (내부 데이터 변해도 추적 가능)
+
+-값 타입 
+int, Integer, String처럼 단순히 값으로 사용하는 자바 기본 타입이나 객체 
+식별자가 없고 값만 있으므로 변경시 추적 불가 
+
+값 타입 분류 
+- 기본 값 타입
+자바 기본 타입 (int double)
+래퍼 클래스 (Integer, Long)
+String 
+
+- 임베디드 타입 (embedded type, 복합 값 타입)
+- 컬랙션 값 타입 (collection value type)
+
+기본 값 타입 
+ex) String name, int age
+생명주기를 엔티티의 의존 
+-> 회원을 삭제하면 이름, 나이 필드도 함께 삭제 
+
+값 타입은 공유 X 
+-> 회원 이름 변경시 다른 회원의 이름도 함꼐 변경되면 안된다
+참고) -> 자바의 기본 타입은 절대 공유 X 
+int double 같은 기본 타입은 절대 공유 X
+기본 타입은 항상 값을 복사함 
+Integer 같은 래퍼 클래스나 String 같은 특수한 클래스는 공유 가능한 객체이지만 변경 X 
+-> reference을 끌고간다 (=공유가 된다)
+
+임베디드 타입 (복합 값 타입)
+
+임베디드 타입 
+새로운 값 타입을 직접 정의 할 수 있다. 
+JPA는 임베티드 타입이라 함 
+주로 기본 값 타입을 모아서 만들어서 복합 값 타입이라고 함
+int String 과 같은 값 타입 
+
+ex) 회원 엔티티는 이름, 근무 시작일, 근무 종료일, 주소, 도시, 주소번지, 주소 우편번호를 갖는다
+
+Member <- workPeriod -> Period (startDate, endDate)
+Member <- homeAddress -> Period (city, street, zipCode)
+
+임베디드 타입 사용법 
+@Embeddable: 값 타입을 정의하는 곳에 표시 
+@Embedded: 값 타입을 사용하는 곳에 표시 
+ == 기본 생성자 필수 
+
+임베디드 타입의 장접
+재사용성 
+높은 응집도 
+Period.isWork()처럼 해당 값 타입만 사용하는 의미 있는 메소드를 만들 수 있다. 
+임베디드 타입을 포함한 모든 값 타입은, 값 타입을 소유한 엔티티에 생명주기를 의존.
+
+임베디드 타입과 테이블 매핑
+임베디드 타입은 엔티티의 값 뿐 이다 
+임베디드 타입을 사용하기 전과 후에는 애핑하는 테이블은 같다 
+객체와 테이블을 아주 세밀학게 매핑하는 것이 가능 
+
+Member <---> Address <---> ZipCode
+Member <---> PhoneNumber <---> PhoneEntity
+
+@AttributeOverride 
+속성 재정의 
+한 엔티티에서 같은 값 타입을 사용하면 컬럼 명이 중복된다
+@AttributeOverrides, @AttributeOverride를 사용해서 컬럼 명 속성을 재정의 
+
+임베디드 타입과 null
+임베디드 타입의 값이 null이면 매핑한 컬럼 값은 모두 null 
+
+값 타입과 불변 객체 
+값 타입은 복잡한 객체 세상을 조금이라도 단순화 하기 위해 생긴 개념.
+따라서 값 타입은 단순하고 안전하게 다룰 수 있도록 
+
+값 타입 공유 참조 
+임베디드 타입 같은 값 타입을 여러 엔티티에서 공유하면 sideEffect 발생 
+
+ex)
+member1 
+            ----->>> 주소 (cidy: OldCity) // city 값을 newCity로 변경 
+member2 
+
+값 타입을 복사 
+값 타입의 실제 인스턴스인 값을 공유 하는 것은 위함 
+대신 값(인스턴스)를 복사해서 사용 
+
+member1 -address-> city:OldCity
+                        (복사)
+member2 -new address-> city:OldCity
+
+객체 타입의 한계 
+항상 값을 복사해서 사용하면 공유 참조로 인해 발생하는 부작용을 피할 수 있다.
+문제는 임베디드 타입처럼 직접 정의한 값 타입은 자바의 기본 타입이 아니라 객체 타입이다 
+자바의 기본 타입에 값을 대입하면 값을 복사한다. 
+객체 타입은 참조 값을 직접 대입하는 것을 막을 방법은 없다 
+객체의 공유 참조는 피할 수 없다. 
+
+객체 타입의 한계 
+기본 타입 (기본 타입은 값을 복사)
+객체 타입 (객체 타입은 참조를 전달)
+
+불변 객체
+객체 타입을 수정할 수 없게 만들면 부작용을 차단 
+값 타입은 불변 객체로 설계해야 한다
+불변 객체 : 생성 시점 이후 절대 값을 변경 할 수 없는 객체 
+생성자로만 값을 설정하고 setter를 만들지 않으면 된다. 
+참고 : Integer, String은 자바가 제공하는 불변 객체 
+
+값 타입 비교 
+값 타입 : 인스턴스가 달라도 그 안에 값이 같으면 같은 것으로 봐야 한다.
+객체 타입 : 다른 값 
+
+값 타입 비교 
+동일성 : 인스턴스의 참조 값을 비교 == 
+동등성 : 인스턴스의 값 비교, equals
+값 타입은 a.equals(b)를 사용해서 동등성 비교
+값 타입의 equals() 메소드를 적절하게 재정의 
+
+값 타입 컬렉션 
+Member 
+id : Long
+favoriteFoods : Set<String>
+addressHistory : List<Address>
+
+Member --- ++ FavoriteFood : 별도 table
+       --- ++ Address : 값 type인데 식별자인 id를 넣어서 pk 사용 (entity) = 별도 table 
+
+단순히 값 type이 하나 
+Member 속성에 MemberTable에 넣으면 된다 
+문제는 Collection이 DB에 들어가야 한다. 관계형 DB는 Collection을 내부적으로 담을 수 있다
+Value로 값만 넣을 수 있다 
+
+값 타입 컬랙션 
+값 타입을 하나 이상 저장시 사용 
+@ElementCollection, @CollectionTable 
+데이터베이스는 컬렉션을 같은 테이블에 저장 X 
+컬렉션을 저장하기위한 별도 테이블이 필요 (1 : 다)
+
+값 타입 collection을 persist 필요 X, lifeCycle 같이 돌아간다.
+member을 저장 할때 같이 돌아간다. 
+값 type collection도 본인 스스로 lifeCycleX 
+모든 lifeCycle에 대한 생명 주기가 member에 속해 있음 
+단순히 member를 변경하면 type을 별도로 update 할 필요 X 
++) Collection의 경우 지연로딩에 속한다. 
+
+값 타입 컬렉션 사용
+(저장, 조회, 수장)
+Address address = findMember.getHomeAddress();
+findMember.setHomeAddress(new Address("o1d1", address.getStreet(), address.getZipCode()));
+findMember.getFavoriteFood().remove("한식");
+findMember.getFavoriteFood().add("양식");
+
+참고) 값 타입 컬렉션은 영속성 전에 + 고아 객체 제거 기능을 필수로 갖는다고 볼 수 있다. 
+
+값 타입 컬렉션의 제약사항 
+값 타입은 엔티티와 다르게 식별자 개념이 없다. 
+값은 변경시 추적 어려움 
+값 타입 컬렉션에 변경 사항이 발생하면, 주인 엔티티와 연관된 모든 데이터를 삭제, 
+값 타입 컬렉션에 있는 현재 값 모두 다시 저장 
+ == 완전히 새걸로 갈아끼는 개념, DB에서 특정 부분만 찾아서 하기 어렵다 (권장 X)
+값 타입 컬렉션을 매핑하는 테이블은 모든 컬럼을 묶어서 기본 키를 구성 (null X, 중복 저장 X)
+
+값 타입 컬렉션 대안 
+실무에서는 상황에 따라 값 타입 컬렉션 대신 일대다 관계를 고려 
+일대다 관계를 위한 엔티티를 만들고, 값 타입을 사용 
+영속성 전이 + 고아 객체를 제거를 사용해서, 컬렉션 처럼 사용 
+
+엔티티 타입 특징 
+식별자 O, 생명 주기 관리, 공유
+
+값 타입의 특징 
+식별자 X, 생명 주기를 엔티티에 의존, 공유하지 않는 것이 안전 (복사 해서 사용)
+불변 객체로 만드는 것이 안전 
+
+값 타입은 값 타입이라 판단 될때만 사용 
+엔티티와 값 타입을 혼동해서 엔티티를 값 타입으로 만들면 안됨 
+식별자가 필요, 지속해서 값을 추적, 변경해야 한다면 그것은 값이 아닌 엔티티
+
+
+ <JPQL>
+
+JPA는 다양한 쿼리 방법을 지원
+JPQL, JPA Criteria, QueryDSL, 네이티브 SQL 
+JDBC API 직접 사용, MyBatis, SpringJdbcTemplate
+
+JPQL 소개 
+
+가장 단순한 조회 방법 
+EntityMAnger.find()
+객체 그래프 탐색 (a.getB(), b.getA())
+
+JPQL 
+JPA를 사용하면 엔티티 객체를 중심으로 개발 
+문제는 검색 쿼리 
+검색을 할 때도 테이블이 아닌 엔티티 객체를 대상으로 검색 
+모든 DB 데이터를 객체로 변환해서 검색하는 것은 불가능
+애플리케이션이 필요한 데이터만 DB에서 불러오려면, 결국 검색 조건이 포함된 SQL 필요 
+
+JPA는 SQL을 추상화한 JPQL이라는 객체 지향 쿼리 언어를 제공 
+SQL과 문법 유사, SELECT, FROM , WHERE, GROUP BY, HAVING, JOIN 지원 
+JPQL은 엔티티 객체를 대상으로 쿼리 
+SQL은 데이터베이스 테이블을 대상으로 쿼리 
+
+String jpql = "select m From Member m where m.name like "%hello%"
+List<Member> rst = em.createQuery(jpql, Member.class)
+    .getResultList();
+
+테이블이 아닌 객체를 대상으로 검색하는 객체지향쿼리 
+SQL을 추상화 해서 특정 DB SQL에 의존 X 
+JPQL을 한마디로 정의하면 객체 지향 SQL 
+
+String jpql = "select m From Member m where m where m.age < 18"
+List<Member> rst = em.createQuery(jpql, Member.class)
+    .getResultList();
+
+QueryDSL
+문자가 아닌 자바 코드로 JPQL을 작성 할 수 있다. 
+JPQL 빌더 역할 
+컴파일 시점에 문법 오류를 찾을 수 있음 
+동적 쿼리 작성 편함 
+단순하고 쉬움 
+실무 사용 권장 
+
+네이티브 SQL 소개 
+JPA가 제공하는 SQL을 직접 사용하는 기능 
+JPQL로 해결 할 수 없는 특정 DB에 의존적 기능 
+String sql = "SELECT ID, AGE, TEAM_ID, NAME FROM MEMBER WHERE NAME = 'kim'";
+List<Member> rstList = em.createNativeQuery(sql, Member.class).getResultList();
+
+JDBC 직접 사용 SpringJdbcTemplate 
+JPA를 사용하면서 JDBC 커넥션을 직접 사용, 스프링 JdbcTemplate, 마이바티스 등을 함께 사용
+단 영속성 컨텍스트를 적절한 시점에 강제로 플러시 필요
+(영속성 컨텍스트는 flush 가 되야 DB에 나라간다. 
+persist 시점에 DB 들어가는 것 아니다.) == commit 시점 
+
+DB connection 획득, query, select (Query = JPA와 관계 X 하지만 member 객체는 JPA 있다. -> 영속성 context, DB Query 아직 안보인다)
+
+JPQL 소개 
+JPQL은 객체지향 쿼리 언어. 따라서 테이블을 대상으로 쿼리하는것이 아닌, 엔티티 객체를 대상으로 쿼리 
+JPQL은 SQL을 추상화해서 특정 DB SQL에 의존하지 않는다. 
+JPQL은 결국 SQL로 변환 
+
+JPQL 문밥 
+    select 문:: =
+        select_절
+        from_절
+        [where_절]
+        [groupby_절]
+        [having_절]
+        [orderby_절]
+    
+update_문:: = update_절 [where_절]
+delete_문:: = delete_절 [where_절]
+ ==> Bulk 연산 
+엔티티와 속성은 대소문자 구분 o 
+JPQL 키워드는 대소문자 구분 X 
+엔티티 이름 사용, 테이블 이름이 아님 
+별칭은 필수 (m)
+
+집합과 정렬 
+select 
+    COUNT(m),
+    SUM(m.age),
+    AVG(m.age),
+    MAX(m.age),
+    MIN(m.age)
+from Member m
+
+GROUP BY, HAVING, ORDER BY 
+
+TypeQuery, Query
+TypeQuery -> 반환 타입 명확할 때 사용 
+TypedQuery<Member> query = ""
+
+Query -> 반환 타입 불명확 
+Query query = ""
+
+결과 조회 API
+query,getResultList() : 결과 하나 이상, 리스트 반환 / 결과 없으면 빈 리스트 반환 
+query.getSingleResult(); : 결과 정확히 하나, 단일 객체 반환 
+결과 X : NoResultException
+둘 이상 O : NonUniqueResultException
+
+파라미터 바인딩 -> 이름기준 
+SELECT m FROM Member m where m.username =: username
+query.setParameter("username", usernameParam)
+
+SELECT m FROM Member m where m.username =? 1
+query.setParameter(1, usernameParam)
+
+프로젝션 
+SELECT 절에 조회 할 대상을 지정 (무엇을 가져올지)
+프로젝션 대상 : 엔티티, 임베디드 타입, 스칼라 타입(숫자, 문자등 기본 데이터)
++) 관계형 DB에서는 스칼라 타입만 
+SELECT m FROM Member m 
+SELECT m.team FROM Member m == 엔티티 프로젝션 
+
+SELECT m.address FROM Member m == 임베디드 타입
+SELECT m.username, m.age FROM Member m == 스칼라 타입 프로젝션 
+DISTINCT로 중복 제거 
+
+프로잭션 여러 값 조회 
+SELECT m.username, m.age FROM Member m 
+Query 타입으로 조회 
+Object[] 타입으로 조회 
+new 명령어로 조회 
+ - 단순 값으 DTO로 바로 조회 
+ - > SELECT new jpabook,jqpl,UserDTO(m.username, m.age) FROM Member m
+ - 패키지 명울 포함한 전체 클래스 명 입력 
+ - 순서와 타입이 일치하는 생성자 필요 
+
+페이징 API
+JPA는 페이징을다음 두 API로 추상화
+setFirstResult(int startPosition) : 조회 시작 위치 
+setMaxResult(int maxResult) : 조회할 데이터 수 
+
+ex)
+String jpql = "";
+List<Member> rstList = em.createQuery(jpql, Member.class)
+    .setFirstResult(10)
+    .setMaxResult(20)
+    .getResultList();
+
+조인 (entity를 중심으로 나감)
+내부 조인 (data x -> 값 X)
+SELECT m FROM Member m [INNER] JOIN m.team t
+
+외부 조인 (team data는 null 이지만 값 나간다)
+SELECT m FROM Member , LEFT [OUTER] JOIN m.team t
+
+세타 조인 (연관관계 없는 것을 막 넣는다.)
+select count(m) from Member m, Team t where m.username = t.name
+
+조인 -ON 절
+1. 조인 대상 필터링 
+-> 회원과 팀을 조인할때 팀 일부만 조인 
+2. 연관관계 없는 엔티티 외부 조인 
+-> setter join 처럼 어절 수 없이 join
+
+조인 대상 필터링 
+SELECT m,t FROM Member m LEFT JOIN m.team t on t.name = 'A'
+(team 이름이 A인 애만 join 하고 싶다.)
+
+연관관계 없는 엔티티 외부 조인
+SELECT m,t FROM Member m LEFT JOIN Team t on m.username = t.name
+(join 조건에 걸려들어간다)
+
+서브 쿼리 
+나이가 평균보다 많은 회원 
+select m from Member m where m.age > (select avg(m2.age) from Member m2)
+select m from Member m where (select count(o) from Order o where m = o.member) > 0
+
+서브 쿼리 지원 함수 
+[NOT] EXISTS => 서브 쿼리에 결과가 존재 하면 true
+{ALL | ANY | SOME} (subquery)
+ALL 모두 만족하면 참
+ANY, SOME :  같은 의미, 조건을 하나라도 만족하면 참 
+[NOT] IN (subquery) : 서브 쿼리의 결과중 하나라도 같은 것이 있다면 참 
+
+ex)
+select m from Member m where exists(select t from m.team t where t.name = '팀A')
+select m from Member m where m.team = ANY(select t from Team t)
+select o from Order o where o.orderAmount > ALL(select p.stockAmount from Product p)
+
+한계 
+JPA는 where having절 에서만 서브 쿼리 사용 가능 
+select wjfeh rksmd 
+from절의 서브 쿼리느 현재 JPQ에서 불가능 
+조임으로 풀 수 있다면 풀어서 해결 
+/ 해결 안되면 Natvie Query or Query 
+
+JPQL 타입 표현 
+문자 : 'HELLO', 'She's'
+숫자 : 10L, 10D, 10F
+Boolean : TRUE, FALSE
+ENUM : jpabook.MemberType.Admin
+엔티티 타입 : TYPE(m) =Member (상속 관계에서 사용)
+
+JPQL 기타 
+SQL과 문법 같은 식 
+EXISTS, IN
+AND, OR, NOT
+=, < , >= , <= , <>
+BETWEEN, LIKE, IS NULL
+
+조건식 CASE
+기본 case
+select
+    case when m.age <= 10 then '학생요금'
+         when m.age >= 60 then '경로요금'
+         else '일반요금'
+    end
+from Member m
+
+COALESCE : 하나씩 조회해서 null이 아니면 반환 
+NULLIF :  두 값이 같으면 null 반환, 다르면 첫번째 값 반환 
+
+사용자 이름이 없으면 회원을 반환 
+select coalesce (m.username, '이름 없는 회원') from Member m
+
+사용자 이름이 관리자면 null을 반환 나머지는 본인 이름 반환 
+select NULLIF (m.username, '관리자') from Member m 
+
+JPQL 기본 함수 
+CONCAT, SUBSTRING, TRIM, LOWER, UPPER, LENGTH, LOCATE, ABS, SQRT, MOD, SIZE, INDEX(JPA 용도)
+
+사용자 정의 함수 호출
+하이버네이트는 사용전 방언 추가 
+select function ('group_concat', i.name) from Item i

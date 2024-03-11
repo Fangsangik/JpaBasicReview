@@ -1,4 +1,5 @@
 import main1.Member;
+import member.Address;
 import member.Member1;
 import member.Team;
 
@@ -112,6 +113,13 @@ public class JpaMain {
             System.out.println("findMember.getUserName() = " + findMember.getUserName());
             System.out.println("findByReference.getId() = " + findByReference.getId());
 
+            Address address = findMember.getHomeAddress();
+            findMember.setHomeAddress(new Address("o1d1", address.getStreet(), address.getZipCode()));
+            findMember.getFavoriteFood().remove("한식");
+            findMember.getFavoriteFood().add("양식");
+
+
+
             tx.commit();
         } catch (Exception e){
             tx.rollback();
@@ -126,7 +134,7 @@ public class JpaMain {
         System.out.println("member1.getUserName() = " + member1.getUserName());
     }
 
-    private static void printMemberAndTeam(Member1 member1){
+    private static void printMemberAndTeam(Member1 member1) {
         String userName = member1.getUserName();
         System.out.println("userName = " + userName);
 
@@ -134,3 +142,4 @@ public class JpaMain {
         System.out.println("team = " + team);
     }
 }
+

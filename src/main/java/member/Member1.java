@@ -5,7 +5,9 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -18,6 +20,22 @@ public class Member1 {
 
 //    @Column(name = "TEAM_ID")
 //    private Long teamId;
+
+    //기간
+    @Embedded
+    private Period workPeriod;
+
+    @Embedded
+    private Address homeAddress;
+
+    @AttributeOverrides(
+            {@AttributeOverride(name = "city"
+                    , column = @Column(name = "WORK_CITY")),
+                    @AttributeOverride(name = "street"
+                            , column = @Column(name = "WORK_STREET")),
+                    @AttributeOverride(name = "zipcode"
+                            , column = @Column(name = "WORK_ZIPCODE"))})
+    private Address workAddress;
 
     //Member 입장 -> Many, Team 입장 -> 1
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,6 +51,18 @@ public class Member1 {
 
     @ManyToMany(mappedBy = "member1List")
     private List<Product> products = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "FAVORITE_FOOD",
+    joinColumns = @JoinColumn(name = "MEMBER_ID"))
+    @Column(name = "FoodName")
+    private Set<String> favoriteFood = new HashSet<>();
+
+    @ElementCollection
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @CollectionTable(name = "ADDRESS"
+    , joinColumns = @JoinColumn(name = "MEMBER_ID"))
+    private List<Address> historyAddress = new ArrayList<>();
 }
 
 /*
