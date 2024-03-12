@@ -888,3 +888,283 @@ CONCAT, SUBSTRING, TRIM, LOWER, UPPER, LENGTH, LOCATE, ABS, SQRT, MOD, SIZE, IND
 사용자 정의 함수 호출
 하이버네이트는 사용전 방언 추가 
 select function ('group_concat', i.name) from Item i
+
+
+경로 표현식
+.(점)을 찍어 객체 그래프를 탐색
+select m.username -> 상태 필드 
+from Member m 
+join m.team t -> 단일 값 연관 필드 
+join m.orders o -> 컬렉션 값 연관 필드 
+where t.name = '팀A'
+
+경로 표현식 용어 정리 
+- 상태 필드 -> 단순히 값 저장 
+- 연관 필드 -> 연관관계를 위한 필드 
+ 1. 단일 연관 필드
+ => @ManyToOne, @OneToOne 대상이 엔티티 
+ 2. 컬렉션 값 연관 필드
+ => @OneToMany, @ManyToMany 대상이 컬렉션 
+
+경로 표헌식 특징 
+상태필드 : 경로 탐색의 끝, 탐색X 
+단일 값 연관 경로 : 묵시적 내부 조인 발생, 탐색 O (조심해서 사용해야 한다 -> Query 튜닝 어렵다)
+컬렉션 값 연관 경로 : 묵시적 내부 조인 발생, 탐색 X 
+    -> FROM 절에서 명시적 조인을 통해 별칭을 얻으려면 별칭을 통해 탐색 가능 
+
+상태 필드 경로 탐색 
+JPQL : select m.username, m.age from Member m
+SQL : select m.username, m.age from Member m
+
+단일값 연관 경로 탐색 (묵시적 Join 발생)
+JPQL : select o.member from Order o
+SQL :
+    select m * 
+        from Orders o 
+        inner join Member m on o.member id = m.id 
+
+JPQL --> SQL (innerJoin)
+
+명시적 조인, 묵시적 조인 
+명시적 조인 : join 
+ -> select m from Member m join m.team t
+묵시적 조인 : 경로 표현식에 의해 묵시적으로 SQL 조인 발생 (내부 조인만 가능)
+ -> select m.team from Member m
+
+경로 표현식 예제 
+select o.member.team from Order o -> join 두번
+select t.members from Team -> 성공
+(collection 이지만, 여기서 끝)
+select t.members.username from Team t -> 실패
+(members을 collection 그대로 사용 -> size 정도 호출 가능)
+select m.username from Team t join t.members m -> 성고
+(join -> collection을 명시적 join
+별칭 m을 가져와서 m에서 다시 시작)
+
+경로 탐색을 사용한 묵시적 조인 시 주의 사항 
+항상 내부 조인 
+컬렉션은 경로 탐색 끝, 명시적 조인을 통해 별칭을 얻어야 한다. 
+경로 탐색은 주로 SELECT, WHERE절 에서 사용, 묵시적 조인으로 인해 SQL의 FROM (JOIN) 절에 영향
+
+JPQL fetch join
+
+fetch join
+SQL 조인 종류 X 
+JPQL에서 성능 최적화를 위해 제공하는 기능 
+연관된 엔티티나 컬렉션을 SQL 한번에 함께 조회하는 기능 (join fetch) 명령어 사용 
+fetch join -> LEFT, OUTER, INNER, | JOIN FETCH  조인 경로 
+
+엔티티 패치 조인 
+회원을 조회하면서 연관된 팀도 함께 조회 (SQL 한번에)
+SQL을 보면 회원 뿐만 아니라 팀(T.*)도 함꼐 SELECT
+[JPQL] 
+select m from Member m join fetch m.team
+
+[SQL]
+SELECT M.*,T.* FROM MEMBER M INNER JOIN TEAM T ON M.TEAM_ID = T.ID
+
+페치 조인 사용 코드 
+String jpql = "select m from Member m join fetch m.team"
+List<Member> members = em.createQuery(jpql, Member.class)
+        .getResultList();
+for(Member member : members) {
+    //페치 조인으로 회원과 팀을 함께 조회해서 지연 로딩 X
+    System.out.println("username = " + member.getUsername() 
+            + " , " + " teamName = " + member.getTeam().name()); 
+
+컬렉션 패치 조인 
+일대다 관계, 컬렉션 패치 조인 
+
+[JPQL]
+select t 
+from Team t join fetch t.members
+where t.name = '팀A'
+
+[SQL]
+SELECT T.*, M.* FROM TEAM T
+INNER JOIN MEMBER M ON T.ID=M.TEAM_ID WHERE T.NAME = '팀A'
+
+
+컬렉션 페치 조인 사용 코드  -> 중복으로 출력 된다 
+String jpql = "select t from Team t join fetch t.members where t.name = '팀A'"
+List<Team> teams = em.createQuery(jpql, Team.class).getResultList();
+
+for(Team team : teams){
+    System.out.println("teamname = " + team.getName() + " , team = " + team);
+    for(Member member : team.getMembers()) {
+    //페치 조인으로 팀과 회원을 함께 조회 해서 지연로딩 발생 X 
+        System.out.println(" -> username = " + member.getUsername() + " member = " + member);
+    }
+}
+
+페치 조인과 DISTINCT
+        (SQL에 distinct로는 한계가 있음 )
+SQL의 DISTINCT는 중복된 결과를 제거하는 명령 
+JPLQ의 DISTINCT 2가지 제공 기능 
+    1. SQL에 DISTINCT를 추가 
+    2. 애플리케이션에서 엔티티 중복 제거 
+
+페치 조인과 DISTINCT 
+select distinct t from Team t join fetch t.members where t.name = '팀A'
+SQL에 DISTINCT를 추가, 데이터가 다르므로 SQL 결과에서는 중복 제거 실패 (완전히 동일해야 제거 가능)
+
+DISTINCT 추가로 애플리케이션에서 중복 제거 시도 
+같은 식별자를 가진 Team 엔티티 제거 
+-> DB 입장에서는 1 : 다 하면 Data 뻥튀기 됨 
+   Member -> Team (뻥튀기 X ) = 다 : 1
+
+페치 조인과 일반 조인의 차이 
+일반 조인 실행시 연관된 엔티티를 함꼐 조회 X 
+
+[JPQL] 
+select t from Team t join t.members m where t.name = '팀 A'
+
+[SQL]
+SELECT T.* FROM TEAM T INNER JOIN MEMBER M ON T.ID = M.TEAM_ID WHERE T.NAME = '팀 A'
+
+JPQL은 결과를 반환 할때 연관관계 고려 x 
+단지 SELECT 절에 지정한 엔티티만 조회 
+여기선 팀 엔티티만 조회, 회원 엔티티는 조회 X
+
+페치 조인과 일반 조인의 차이 
+페치 조인을 사용시, 연관된 엔티티도 함께 조회(즉시 로딩)
+페치 조인은 객체 그래프를 SQL 한번에 조회하는 개념 
+
+페치 조인 실행 예시 
+페치 조인은 연관된 엔티티를 함께 조회 (N + 1 문제 해결)
+
+[JPQL]
+select t from Team t join fetch t.members where t.name = '팀A'
+[SQL]
+SELECT T.*, M.* FROM TEAM T INNER JOIN MEMBER ON T.ID = M.TEAM_ID WHERE T.NAME = '팀A'
+
+페치 조인의 특징 한계 
+페치 조인 대상에는 별칭을 줄 수 x 
+둘 이상의 컬렉션은 페치 조인 할 수 없다 . -> DATA 정합성 맞지 x (뻥튀기 가능성)
+컬렉션 페치 조인하면 페이징 API(setFirstResult, setMaxResult) 사용 X 
+-> 일대일, 다대일 같은 단일 값 연관 필드들은 페치 조인 해도 페이징 가능 
+
+연관된 엔티티들을 SQL 한 번으로 조회 -> 성능 최적화
+엔티티에 직접 사용하는 글로벌 로딩 전략 보다 우선 
+    -> @OneToMany(fetch = FetchType.Lazy)
+실무에서 글로벌 로딩 전략은 모두 지연로딩 
+최적화가 필요한 곳은 페치 조인 적용 
+
+페치 조인 정리 
+모든 것을 페치 조인으로 해결 할 수 없다 
+객체 그래프를 유지 할때 사용 하면 효과적 
+여러 테이블을 조인해서 엔티티가 가진 모양이 아닌 전혀 다른 결과를 내야 한다면 페치 조인 보다는 일반 조인을 사용 
+필요한 데이터들만 조회해서 DTO로 반환하는 것이 효과적 
+
+JPQL 다형성 쿼리 
+
+TYPE
+조회 대상을 특정 자식으로 한정
+[JPQL] 
+select i from Item i where type(i) IN (Book, Movie)
+
+[SQL]
+select i from i where i.DTYPE in ('B', 'M')
+
+TREAT 
+자바의 타입 캐스팅과 유사 
+상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용 
+FROM, WHERE, SELECT 
+
+ex) 부모인 Item과 자식 Book이 있다 
+
+-> auther 다운 케스팅 
+[JPQL]
+select i from Item i where treat (i as Book).auther = 'kim'
+
+[SQL]
+select i from Item i where i.DTYPE = 'B' and i.auther = 'kim' 
+
+엔티티 직접 사용 
+JPQL에서 엔티티를 직접 사용시, SQL에서 해당 엔티티의 기본 키 값을 사용 
+
+[JPQL] 
+select count(m.id) from Member m -> 엔티티 아이디를 사용 
+select count(m) from Member m -> 엔티티 직접 사용 
+
+[SQL] (JPQL 둘다 같은 다음 SQL 실행 )
+select count(m.id) as cnt from Member m 
+
+엔티티를 직접 사용 (기본 키 값)
+엔티티를 파리미터러로 전달 
+String jpql = "select m from Member m where m = :member"
+List rstList = em.createQuery(jpql)
+                 .setParameter("memberId", member)
+                 .getResultList();
+
+식별자를 직접 전달
+String jpql = "select m from Member m where m.id = :memberId"
+List rstList = em.createQuery(jpql)
+                .setParameter("memberId", memberId)
+                .getResultList();
+
+엔티티를 직접 사용 (외래 키 값)
+Team team = em.find(Team.class, 1L);
+String jpql = "select m from Member m where m.team = :team"
+List rstList = em.createQuery(jpql)
+                .setParameter("team", team)
+                .getResultList();
+
+String jpql = "select m from Member m where m.team.id = :teamId"
+List rstList = em.createQuery(jpql)
+    .setParameter("teamId", teamId)
+    .getResultList();
+
+JPQL (Named 쿼리)
+Named 쿼리 
+미리 정의해서 이름을 부여하고 사용하는 JPQL 
+정적 쿼리 
+어노테이션, XML 
+애플리케이션 로딩 시점에 초기화 후 재사용 
+애플리케이션 로딩 시점에 쿼리를 검증 
+
+Named 쿼리 
+-> Spring Data JPA에서 intefaceMethod 위에 선언 
+@Entity
+@NamedQuery (
+    name = "Member.findByUsername", 
+    query = "select m from Member m where m.username = :username")
+public class Member {
+}
+
+List<Member> rstList = 
+    em.createNamedQuery = ("Member.findByUsername", Member.class)
+        .setParameter("username", "회원 1")
+        .gerResultList();
+
+== application loading 시점에 SQL passing 
+
+Named 쿼리 보다 XML 우선권 O 
+애플리케이션 운영 환경에 따라 다른 XML 배포 
+
+JPQL 벌크 연산 
+재고가 10개 미만인 모든 상품 가격을 10% 상승? 
+JPA 변경 감지 기능으로 실행하려면, 너무 많은 SQL 실행
+1. 재고가 10개 미만인 상품을 리스트로 조회 
+2. 상품 엔티티의 가격을 10% 증가 
+3. 트랜잭션 커밋 시점에서 변경 감지 동작 
+
+ex ) 
+쿼리 한번으로 여러 테이블 로우 변경(엔티티)
+executeUpdate()의 결과는 영향받은 엔티티 수 반환 
+UPDATE, DELETE 지원 
+INSERT (insert into ... select )
+
+String qlString = "update Product + p " + 
+                    "set p.price = p.price * 1.1" +
+                        "where p.stockAmount < :stockAmount";
+
+int rstCnt = em.createQuery(qlString)
+            .setParameter("stockAmount", 10)
+            .executeUpdate();
+
+벌크 연산 주의 
+벌크 연산은 영속성 컨텍스트를 무시하고 DB에 직접 쿼리 
+1. 벌크 연산 수행 
+2. 벌크 연산 수행 후, 영속성 컨텍스트 초기화 
+
