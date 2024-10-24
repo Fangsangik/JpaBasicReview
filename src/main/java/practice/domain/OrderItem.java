@@ -1,9 +1,6 @@
-package practice;
+package practice.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,9 +10,13 @@ import lombok.Setter;
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "orderItem_id")
     private Long id;
 
+    @Column(name = "order_id")
     private Long orderId;
+
+    @Column(name = "item_id")
     private Long itemId;
     private int count;
     private int orderPrice;

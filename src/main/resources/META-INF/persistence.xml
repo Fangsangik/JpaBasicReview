@@ -3,7 +3,7 @@
              xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
     <!-- JPA 이름 -->
-    <persistence-unit name = "hello">
+    <persistence-unit name = "practice">
         <properties>
             <!-- 필수 속성 -->
             <!-- Driver 속성 -->
@@ -21,7 +21,7 @@
             <!-- 쿼리가 왜 나간건지 -->
             <property name="hibernate.use_sql_comments" value="true"/>
             <property name="hibernate.jdbc.batch_size" value="10"/>
-            <!-- <property name="hibernate.hbm2ddl.auto" value="update"/>-->
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
         </properties>
     </persistence-unit>
 </persistence>
