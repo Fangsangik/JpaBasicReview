@@ -25,6 +25,8 @@ public class CreateMember {
             member.setId(2L);
             member.setName("HelloB");
             em.persist(member);
+
+            //commit 안하면 반영 안됨
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
