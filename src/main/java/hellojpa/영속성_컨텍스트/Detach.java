@@ -1,4 +1,4 @@
-package hellojpa.applicationworkout;
+package hellojpa.영속성_컨텍스트;
 
 import hellojpa.Member;
 import jakarta.persistence.EntityManager;
@@ -6,7 +6,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 
-public class CreateMember {
+public class Detach {
     public static void main(String[] args) {
         //unitName을 넘긴다.
         //DB와 연결 다 됨 
@@ -21,12 +21,20 @@ public class CreateMember {
 
         //code
         try {
-            //JPA의 모든 코드는 transaction에서 실행해야 한다.
-            Member member = new Member();
-            member.setName("HelloB");
-            em.persist(member);
+            //영속
+            Member findMember1 = em.find(Member.class, 150L);
+            //dirty Checking
+            findMember1.setName("AAAAAA");
 
-            //commit 안하면 반영 안됨
+            //JPA에서 관리 X -> transaction시 아무것도 안올라감
+            em.clear();
+
+            Member findMember2 = em.find(Member.class, 150L);
+
+
+            System.out.println("=======================");
+
+            //commit 시점에 db 날라감
             tx.commit();
         } catch (Exception e) {
             tx.rollback();

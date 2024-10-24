@@ -1,5 +1,6 @@
 package hellojpa.applicationworkout;
 
+import hellojpa.Member;
 import jakarta.persistence.*;
 
 import java.util.List;

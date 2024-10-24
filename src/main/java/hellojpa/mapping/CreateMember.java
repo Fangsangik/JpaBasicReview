@@ -1,4 +1,4 @@
-package hellojpa.applicationworkout;
+package hellojpa.mapping;
 
 import hellojpa.Member;
 import jakarta.persistence.EntityManager;
@@ -22,8 +22,7 @@ public class CreateMember {
         //code
         try {
             //JPA의 모든 코드는 transaction에서 실행해야 한다.
-            Member member = new Member();
-            member.setName("HelloB");
+            MemberA member = new MemberA();
             em.persist(member);
 
             //commit 안하면 반영 안됨
