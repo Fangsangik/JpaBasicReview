@@ -9,8 +9,8 @@
             <!-- Driver 속성 -->
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
             <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+            <property name="javax.persistence.jdbc.password" value="123"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:./mytest"/>
             <!-- Database 방언 JPA는 특정 DB에 종속 X -->
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
             <!-- 옵션 -->
