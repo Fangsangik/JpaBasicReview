@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Item {
-
     @Id
     @GeneratedValue
     private Long id;
