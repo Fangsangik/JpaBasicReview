@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -16,10 +19,11 @@ public class Member extends BaseEntity {
     @Column(name = "member_id")
     private Long id;
 
+    private String username;
+
     @OneToMany(mappedBy = "member")
     private List<Order> orders = new ArrayList<>();
 
-    private String name;
-    private String city;
-    private String zipCode;
+    @Embedded
+    private Address homeAddress;
 }

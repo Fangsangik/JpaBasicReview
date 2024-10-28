@@ -12,9 +12,8 @@ public class Delivery extends BaseEntity{
     @GeneratedValue
     private Long id;
 
-    private String name;
-    private String city;
-    private String zipCode;
+   @Embedded
+   private Address address;
 
     @OneToOne(mappedBy = "delivery", fetch = FetchType.LAZY)
     private Order order;
