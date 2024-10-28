@@ -9,8 +9,8 @@
             <!-- Driver 속성 -->
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
             <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value="123"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2::tcp://localhost/~/mytest"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
             <!-- Database 방언 JPA는 특정 DB에 종속 X -->
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
             <!-- 옵션 -->
@@ -21,7 +21,12 @@
             <!-- 쿼리가 왜 나간건지 -->
             <property name="hibernate.use_sql_comments" value="true"/>
             <property name="hibernate.jdbc.batch_size" value="10"/>
-            <property name="hibernate.hbm2ddl.auto" value="create"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+
+            <!-- SQL과 관련된 자세한 디버그 정보를 위해 로그 레벨 조정 -->
+            <!--<property name="hibernate.logger" value="org.hibernate.SQL"/> - SQL 로그 레벨 조정 -->
+
+
         </properties>
     </persistence-unit>
 </persistence>
